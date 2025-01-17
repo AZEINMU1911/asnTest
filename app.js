@@ -83,6 +83,42 @@ app.get('/api/countries/name/:name/lang/:lang', async (req, res) => {
     }
 });
 
+const { body, validationResult } = require('express-validator');
+
+// POST new country with validation and duplicate check
+app.post('/api/countries', [
+    body('name').not().isEmpty().withMessage('Name is required'),
+    body('capital').not().isEmpty().withMessage('Capital is required'),
+    body('flag').not().isEmpty().withMessage('Flag URL is required'),
+    body('code').not().isEmpty().withMessage('Country code is required'),
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { name, capital, flag, code, alt_code } = req.body;
+
+    try {
+        // Check country with the same code already exists
+        const duplicateResult = await client.query('SELECT * FROM countries WHERE code = $1', [code]);
+        if (duplicateResult.rows.length > 0) {
+            return res.status(400).json({ error: 'Country code already exists' });
+        }
+
+        // Insert new country
+        const result = await client.query(
+            'INSERT INTO countries(name, capital, flag, code, alt_code) VALUES($1, $2, $3, $4, $5) RETURNING *',
+            [name, capital, flag, code, alt_code]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error('Error inserting data', err);
+        res.status(500).json({ error: 'Database Error' });
+    }
+});
+
+
 /* Test route to check database connection
 app.get('/api/test', async (req, res) => {
     try {
