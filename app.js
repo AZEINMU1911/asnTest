@@ -3,6 +3,7 @@ require('dotenv').config();
 const { resolveSoa } = require('dns');
 const client = require('./db');
 const express = require('express');
+const { body, validationResult } = require('express-validator');
 
 const app = express();
 const port = process.env.PORT || 3000; 
