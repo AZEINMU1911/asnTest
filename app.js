@@ -32,8 +32,12 @@ app.get('/api/countries', async (req,res) => {
         queryParams.push(`%${name}`);
     }
     if (capital){
-        query += 'AND name ILIKE $' + (queryParams.length + 1);
-        queryParams.push(`%${name}`);
+        query += 'AND capital ILIKE $' + (queryParams.length + 1);
+        queryParams.push(`%${capital}`);
+    }
+    if (code){
+        query += 'AND code ILIKE $' + (queryParams.length + 1);
+        queryParams.push(`%${code}`);
     }
 })
 
