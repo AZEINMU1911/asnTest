@@ -1,5 +1,6 @@
 // start
 require('dotenv').config();
+const { resolveSoa } = require('dns');
 const client = require('./db');
 const express = require('express');
 
@@ -38,6 +39,17 @@ app.get('/api/countries', async (req,res) => {
     if (code){
         query += 'AND code ILIKE $' + (queryParams.length + 1);
         queryParams.push(`%${code}`);
+    }
+
+    query += ' LIMIT $' + (queryParams.length + 1) + ' OFFSET $' + (queryParams.length + 2);
+    queryParams.push(limit, offset);
+
+    try {
+        const result = await client.query(query, queryParams);
+        res.json(result.rows);
+    } catch (err) {
+        console.error ('Error filtering DB', err);
+        res.status(500).json({error: 'Database Error'})
     }
 })
 
