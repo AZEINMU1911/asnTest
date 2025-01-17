@@ -9,7 +9,7 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// GET
+// GET all countries
 app.get('/api/countries', async (req, res) => {
     try {
         const result = await client.query('SELECT * FROM countries');
@@ -48,12 +48,42 @@ app.get('/api/countries', async (req,res) => {
         const result = await client.query(query, queryParams);
         res.json(result.rows);
     } catch (err) {
-        console.error ('Error filtering DB', err);
+        console.error ('Error filtering Database', err);
         res.status(500).json({error: 'Database Error'})
     }
 })
 
-// Test route to check database connection
+//GET single country by code
+app.get('/api/country/code/:code', async (req,res) => {
+    const {code} = req.params;
+    try {
+        const result = await client.query('SELECT * FROM countries WHERE code = $1', [code]);
+        if (result.rows.length === 0 ){
+            return res.status(404).json({error : 'Country not found'});
+        }  res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({error : 'Database error'});
+    }
+});
+
+//GET single country by name and language (id or en)
+app.get('/api/countries/name/:name/lang/:lang', async (req, res) => {
+    const { name, lang } = req.params;
+    try {
+        const result = await client.query(
+            'SELECT * FROM countries WHERE name ->> $1 = $2', [lang, name]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Country not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error querying database', err);
+        res.status(500).json({ error: 'Database Error' });
+    }
+});
+
+/* Test route to check database connection
 app.get('/api/test', async (req, res) => {
     try {
         const result = await client.query('SELECT NOW()');
@@ -63,7 +93,7 @@ app.get('/api/test', async (req, res) => {
         res.status(500).json({ error: 'Database connection error' });
     }
 });
-
+*/
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
 });
